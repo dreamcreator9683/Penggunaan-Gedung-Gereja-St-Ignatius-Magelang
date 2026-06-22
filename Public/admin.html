@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Panel Pengelola Utama</title>
+    <style>
+        body { font-family: sans-serif; max-width: 700px; margin: 30px auto; padding: 20px; background: #f4f6f9; color: #333; }
+        .box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 5px; }
+        button { padding: 6px 12px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        .btn-del { background: #dc3545; }
+        .btn-edit { background: #ffc107; color: black; }
+        li { background: #f9f9f9; padding: 10px; margin-bottom: 8px; border: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; border-radius: 4px;}
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <a href="/">&larr; Beranda Utama</a>
+
+    <div id="loginBox" class="box">
+        <h2>Verifikasi Khusus Admin</h2>
+        <div class="form-group">
+            <input type="password" id="inputPassword" placeholder="Masukkan Password Admin" required>
+        </div>
+        <button onclick="login()">Masuk Sistem</button>
+    </div>
+
+    <div id="dashboardBox" class="hidden">
+        <div class="box" style="background: #e9ecef; display: flex; justify-content: space-between; align-items: center;">
+            <h3>Selamat Datang, Admin</h3>
+            <button onclick="logout()" style="background: #6c757d;">Logout</button>
+        </div>
+
+        <div class="box">
+            <h3>1. Manajemen Daftar Ruangan/Gedung</h3>
+            <form id="formTempat" style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="text" id="namaTempat" placeholder="Nama Tempat Baru" required>
+                <button type="submit">Tambah</button>
+            </form>
+            <ul id="listTempat"></ul>
+        </div>
+
+        <div class="box">
+            <h3>2. Modifikasi / Edit Jadwal Booking Pemesan</h3>
+            <ul id="listJadwalAdmin"></ul>
+        </div>
+
+        <div class="box">
+            <h3>3. Pengaturan Keamanan</h3>
+            <input type="password" id="passBaru" placeholder="Password Baru">
+            <button onclick="ubahPassword()">Perbarui Password</button>
+        </div>
+    </div>
+
+    <script>
+        function getToken() { return localStorage.getItem('adminToken') || ''; }
+
+        function cekSesi() {
+            if (!getToken()) {
+                document.getElementById('loginBox').classList.remove('hidden');
+                document.getElementById('dashboardBox').classList.add('hidden');
+            } else {
+                document.getElementById('loginBox').classList.add('hidden');
+                document.getElementById('dashboardBox').classList.remove('hidden');
+                muatTempat();
+                muatJadwalAdmin();
+            }
+        }
+
+        async function login() {
+            const password = document.getElementById('inputPassword').value;
+            const res = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            const data = await res.json();
+            if(res.ok) { localStorage.setItem('adminToken', data.token); cekSesi(); } 
+            else { alert(data.message); }
+        }
+
+        async function muatTempat() {
+            const res = await fetch('/api/rooms');
+            const data = await res.json();
+            const list = document.getElementById('listTempat');
+            list.innerHTML = '';
+            data.forEach(t => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${t}</span> <div>
+                    <button class="btn-edit" onclick="editTempat('${t}')">Edit</button>
+                    <button class="btn-del" onclick="hapusTempat('${t}')">Hapus</button>
+                </div>`;
+                list.appendChild(li);
+            });
+        }
+
+        async function muatJadwalAdmin() {
+            const res = await fetch('/api/bookings');
+            const data = await res.json();
+            const list = document.getElementById('listJadwalAdmin');
+            list.innerHTML = '';
+            
+            data.forEach(b => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div>
+                        <strong>${b.tempat}</strong> - ${b.tanggal} (${b.jamMulai}-${b.jamSelesai})<br>
+                        Pemesan: ${b.nama} (${b.nomorHp})
+                    </div>
+                    <div>
+                        <button class="btn-edit" onclick="editJadwal('${b.id}', '${b.nama}', '${b.nomorHp}', '${b.tempat}', '${b.tanggal}', '${b.jamMulai}', '${b.jamSelesai}')">Edit Jadwal</button>
+                        <button class="btn-del" onclick="hapusJadwal('${b.id}')">X</button>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        async function editJadwal(id, nama, nomorHp, tempat, tanggal, jamMulai, jamSelesai) {
+            const nNama = prompt("Edit Nama Pemesan:", nama) || nama;
+            const nHp = prompt("Edit Nomor HP:", nomorHp) || nomorHp;
+            const nTanggal = prompt("Edit Tanggal (YYYY-MM-DD):", tanggal) || tanggal;
+            const nMulai = prompt("Edit Jam Mulai (HH:MM):", jamMulai) || jamMulai;
+            const nSelesai = prompt("Edit Jam Selesai (HH:MM):", jamSelesai) || jamSelesai;
+
+            const res = await fetch(`/api/bookings/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': getToken() },
+                body: JSON.stringify({ nama: nNama, nomorHp: nHp, tempat, tanggal: nTanggal, jamMulai: nMulai, jamSelesai: nSelesai })
+            });
+            alert(await res.json().then(d => d.message));
+            muatJadwalAdmin();
+        }
+
+        async function hapusJadwal(id) {
+            if(!confirm("Hapus jadwal ini secara manual?")) return;
+            await fetch(`/api/bookings/${id}`, { method: 'DELETE', headers: { 'x-admin-token': getToken() } });
+            muatJadwalAdmin();
+        }
+
+        // Tambah tempat baru
+        document.getElementById('formTempat').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await fetch('/api/rooms', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': getToken() },
+                body: JSON.stringify({ namaTempat: document.getElementById('namaTempat').value })
+            });
+            document.getElementById('namaTempat').value = '';
+            muatTempat();
+        });
+
+        async function editTempat(namaLama) {
+            const namaBaru = prompt("Ubah Nama Tempat:", namaLama);
+            if(!namaBaru) return;
+            await fetch('/api/rooms', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': getToken() },
+                body: JSON.stringify({ namaLama, namaBaru })
+            });
+            muatTempat(); muatJadwalAdmin();
+        }
+
+        async function hapusTempat(namaTempat) {
+            if(!confirm("Hapus tempat ini beserta seluruh jadwal di dalamnya?")) return;
+            await fetch('/api/rooms', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': getToken() },
+                body: JSON.stringify({ namaTempat })
+            });
+            muatTempat(); muatJadwalAdmin();
+        }
+
+        async function ubahPassword() {
+            const passwordBaru = document.getElementById('passBaru').value;
+            const res = await fetch('/api/admin/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': getToken() },
+                body: JSON.stringify({ passwordBaru })
+            });
+            alert(await res.json().then(d => d.message));
+            if(res.ok) logout();
+        }
+
+        function logout() { localStorage.removeItem('adminToken'); window.location.reload(); }
+        cekSesi();
+    </script>
+</body>
+</html>
