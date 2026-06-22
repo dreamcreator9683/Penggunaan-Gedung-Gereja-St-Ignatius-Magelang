@@ -2,276 +2,207 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Sistem Booking Gedung Gereja</title>
+    <title>Dashboard Admin - Booking Gedung Gereja</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; overflow: hidden; background: #1a1a1a; color: #fff; }
-        
-        .sisi-kiri { width: 45%; padding: 25px; overflow-y: auto; background: rgba(30, 30, 30, 0.95); display: flex; flex-direction: column; gap: 20px; border-right: 3px solid #ffc107; }
-        .sisi-kanan { width: 55%; background-image: url('./background.jpg'); background-repeat: no-repeat; background-position: center center; background-size: cover; position: relative; }
-        
-        h2, h3 { color: #ffc107; margin-bottom: 5px; }
-        .form-group { margin-bottom: 12px; }
-        label { display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px; }
-        input, select { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 13px; }
-        input:focus, select:focus { border-color: #ffc107; outline: none; }
-        
-        button { width: 100%; padding: 10px; background: #ffc107; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; padding: 30px; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e1e1e; padding: 25px; border-radius: 8px; border-top: 4px solid #ffc107; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h2, h3 { color: #ffc107; margin-bottom: 15px; }
+        .form-inline { display: flex; gap: 10px; margin-bottom: 20px; }
+        input, select { flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #444; background: #2a2a2a; color: white; }
+        button { padding: 10px 20px; background: #ffc107; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
         button:hover { background: #e0a800; }
-        
-        /* --- STYLING KALENDER --- */
-        .kalender-box { background: #222; border: 1px solid #444; padding: 15px; border-radius: 8px; }
-        .kalender-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: bold; color: #ffc107; }
-        .kalender-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; font-size: 12px; font-weight: bold; color: #888; margin-bottom: 5px;}
-        .kalender-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-        .day { padding: 8px 0; text-align: center; background: #333; border-radius: 4px; cursor: pointer; font-size: 13px; position: relative; }
-        .day:hover { background: #444; }
-        .day.terisi { background: #dc3545; color: white; font-weight: bold; box-shadow: 0 0 5px #dc3545; }
-        .day.terisi::after { content: ''; width: 6px; height: 6px; background: #ffc107; border-radius: 50%; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); }
-        .day.empty { background: transparent; cursor: default; }
-
-        /* --- NOTIFIKASI POPUP DETAIL --- */
-        .notif-detail { background: #2d2d2d; border-left: 5px solid #ffc107; padding: 12px; border-radius: 4px; display: none; margin-top: 5px; }
-        .notif-title { font-weight: bold; color: #ffc107; margin-bottom: 6px; font-size: 14px;}
-        .notif-item { font-size: 13px; border-bottom: 1px solid #444; padding: 6px 0; }
-        .notif-item:last-child { border-bottom: none; }
-
-        /* Grouping List */
-        .group-tempat { background: #252525; border: 1px solid #444; border-radius: 6px; padding: 12px; margin-top: 5px;}
-        .nama-header-tempat { background: #ffc107; color: #000; padding: 4px 8px; font-weight: bold; border-radius: 4px; margin-bottom: 8px; font-size: 14px; }
-        
-        .link-admin { text-align: right; font-size: 12px; }
-        .link-admin a { color: #ffc107; text-decoration: none; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; font-size: 14px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+        th { background: #2a2a2a; color: #ffc107; }
+        tr:hover { background: #252525; }
+        .logout-box { text-align: right; margin-bottom: 15px; }
+        #loginForm { max-width: 400px; margin: 100px auto; background: #1e1e1e; padding: 30px; border-radius: 8px; border-top: 4px solid #ffc107; }
+        #adminKonten { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="sisi-kiri">
-        <div class="link-admin"><a href="/admin.html">Dashboard Admin &rarr;</a></div>
-        <h2>Pemesanan Tempat</h2>
-        
-        <form id="formBooking">
-            <div class="form-group">
-                <label>Nama Pemesan:</label>
-                <input type="text" id="nama" required>
-            </div>
-            <div class="form-group">
-                <label>Nomor HP / WhatsApp (Aktif):</label>
-                <input type="tel" id="nomorHp" placeholder="Contoh: 0812xxxxxx" required>
-            </div>
-            <div class="form-group">
-                <label>Acara / Kegunaan Gedung:</label>
-                <input type="text" id="acara" placeholder="Contoh: Latihan Koor / Rapat Dewan Paroki" required>
-            </div>
-            <div class="form-group">
-                <label>Pilih Ruangan/Gedung:</label>
-                <select id="tempat" required></select>
-            </div>
-            <div class="form-group">
-                <label>Tanggal:</label>
-                <input type="date" id="tanggal" required>
-            </div>
-            <div class="form-group">
-                <label>Jam Mulai s/d Selesai:</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="time" id="jamMulai" required>
-                    <input type="time" id="jamSelesai" required>
-                </div>
-            </div>
-            <button type="submit">Ajukan Pemesanan Tempat</button>
-        </form>
-
-        <hr style="border-color: #333;">
-
-        <h3>Kalender Cek Jadwal</h3>
-        <div class="kalender-box">
-            <div class="kalender-header">
-                <button onclick="bulanSebelumnya()" style="width:auto; padding:5px 10px; font-size:12px;">&larr;</button>
-                <span id="bulanTahunLabel"></span>
-                <button onclick="bulanBerikutnya()" style="width:auto; padding:5px 10px; font-size:12px;">&rarr;</button>
-            </div>
-            <div class="kalender-days">
-                <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
-            </div>
-            <div id="kalenderGrid" class="kalender-grid"></div>
-        </div>
-
-        <div id="notifBox" class="notif-detail"></div>
-
-        <h3>Daftar Jadwal (Grouping)</h3>
-        <div id="containerJadwal"></div>
+    <div id="loginForm">
+        <h2>Login Admin Paroki</h2>
+        <p style="color: #aaa; font-size: 13px; margin-bottom: 15px;">Silakan masukkan password admin untuk mengelola jadwal.</p>
+        <input type="password" id="inputPassword" placeholder="Masukkan Password Admin" style="width:100%; margin-bottom:15px;"><br>
+        <button onclick="prosesLogin()" style="width:100%;">Masuk ke Dashboard</button>
+        <p style="text-align:center; margin-top:15px; font-size:13px;"><a href="index.html" style="color:#ffc107; text-decoration:none;">&larr; Kembali ke Form Pemesanan</a></p>
     </div>
 
-    <div class="sisi-kanan"></div>
+    <div id="adminKonten" class="container">
+        <div class="logout-box">
+            <span style="color:#aaa; font-size:14px; margin-right:15px;">Sesi Admin Aktif</span>
+            <button onclick="prosesLogout()" class="btn-danger" style="padding: 5px 15px; font-size:12px;">Keluar/Logout</button>
+        </div>
+        
+        <h2>Dashboard Manajemen Gedung & Jadwal</h2>
+        <p style="margin-bottom: 20px; font-size:13px;"><a href="index.html" style="color:#ffc107; text-decoration:none;">&larr; Lihat Tampilan Depan Umat</a></p>
+
+        <hr style="border-color:#333; margin-bottom:20px;">
+
+        <h3>🛠️ Tambah / Kelola Ruangan</h3>
+        <div class="form-inline">
+            <input type="text" id="namaRuanganBaru" placeholder="Contoh: Gedung Pertemuan Baru">
+            <button onclick="tambahRuangan()">Tambah Ruangan</button>
+        </div>
+        <div id="listRuanganDaftar" style="margin-bottom:30px; font-size:14px; background:#252525; padding:10px; border-radius:5px;"></div>
+
+        <h3>📋 Daftar Seluruh Pesanan Tempat (Database Cloud)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tempat / Ruangan</th>
+                    <th>Tanggal</th>
+                    <th>Waktu (Jam)</th>
+                    <th>Acara / Kegunaan</th>
+                    <th>Pemesanan & Kontak</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tabelJadwalAdmin">
+                </tbody>
+        </table>
+    </div>
 
     <script>
-        let semuaBooking = [];
-        let tanggalSekarang = new Date();
-        let bulanAktif = tanggalSekarang.getMonth();
-        let tahunAktif = tanggalSekarang.getFullYear();
-
-        const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-
-        async function muatData() {
-            try {
-                // 1. Muat Dropdown Pilihan Ruangan (Dengan Pengingat Pilihan agar tidak melompat sendiri)
-                const resRooms = await fetch('/api/rooms');
-                const rooms = await resRooms.json();
-                const selectTempat = document.getElementById('tempat');
-                
-                // Ambil nilai pilihan user saat ini sebelum daftar dikosongkan
-                const pilihanSaatIni = selectTempat.value; 
-
-                selectTempat.innerHTML = '';
-                rooms.forEach(room => {
-                    let opt = document.createElement('option');
-                    opt.value = room; 
-                    opt.innerHTML = room;
-                    selectTempat.appendChild(opt);
-                });
-
-                // Kembalikan pilihan user semula jika item tersebut masih ada di dalam database
-                if (pilihanSaatIni && rooms.includes(pilihanSaatIni)) {
-                    selectTempat.value = pilihanSaatIni;
-                }
-
-                // 2. Muat Jadwal & Proses Grouping Per Tempat
-                const resBookings = await fetch('/api/bookings');
-                semuaBooking = await resBookings.json();
-                
-                renderKalender();
-
-                const container = document.getElementById('containerJadwal');
-                container.innerHTML = '';
-
-                if (semuaBooking.length === 0) {
-                    container.innerHTML = "<p style='color:#888; font-style:italic;'>Belum ada jadwal terisi.</p>";
-                    return;
-                }
-
-                const grupJadwal = {};
-                semuaBooking.forEach(b => {
-                    if (!grupJadwal[b.tempat]) grupJadwal[b.tempat] = [];
-                    grupJadwal[b.tempat].push(b);
-                });
-
-                for (const tempat in grupJadwal) {
-                    const boxGrup = document.createElement('div');
-                    boxGrup.className = 'group-tempat';
-                    boxGrup.innerHTML = `<div class='nama-header-tempat'>🏢 ${tempat}</div>`;
-                    
-                    grupJadwal[tempat].forEach(b => {
-                        const item = document.createElement('div');
-                        item.style.fontSize = '13px';
-                        item.style.padding = '5px 0';
-                        item.innerHTML = `📅 <strong>${b.tanggal}</strong> (${b.jamMulai} - ${b.jamSelesai})<br>⛪ Acara: ${b.acara} | 👤 ${b.nama}`;
-                        boxGrup.appendChild(item);
-                    });
-                    container.appendChild(boxGrup);
-                }
-            } catch (error) {
-                console.error("Gagal memuat data:", error);
+        // Fungsi memverifikasi apakah token admin masih valid di browser
+        function cekSesi() {
+            const token = localStorage.getItem('adminToken');
+            if (token) {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('adminKonten').style.display = 'block';
+                muatDataAdmin();
+            } else {
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('adminKonten').style.display = 'none';
             }
         }
 
-        // --- LOGIKA KALENDER ---
-        function renderKalender() {
-            document.getElementById('bulanTahunLabel').innerText = `${namaBulan[bulanAktif]} ${tahunAktif}`;
-            const grid = document.getElementById('kalenderGrid');
-            grid.innerHTML = '';
-
-            const hariPertama = new Date(tahunAktif, bulanAktif, 1).getDay();
-            const jumlahHari = new Date(tahunAktif, bulanAktif + 1, 0).getDate();
-
-            // Slot kosong awal bulan
-            for (let i = 0; i < hariPertama; i++) {
-                let div = document.createElement('div');
-                div.className = 'day empty';
-                grid.appendChild(div);
-            }
-
-            // Isi hari/tanggal
-            for (let hari = 1; hari <= jumlahHari; hari++) {
-                let div = document.createElement('div');
-                div.className = 'day';
-                div.innerText = hari;
-
-                // Format ke string YYYY-MM-DD
-                let mm = String(bulanAktif + 1).padStart(2, '0');
-                let dd = String(hari).padStart(2, '0');
-                let stringTanggal = `${tahunAktif}-${mm}-${dd}`;
-
-                // Cek apakah ada booking di tanggal ini
-                let adaBooking = semuaBooking.filter(b => b.tanggal === stringTanggal);
-                if (adaBooking.length > 0) {
-                    div.classList.add('terisi');
-                }
-
-                // Efek Klik Tanggal Kalender
-                div.onclick = () => tampilkanNotifDetail(stringTanggal, hari, adaBooking);
-
-                grid.appendChild(div);
+        // Jalankan fungsi login ke API Server
+        async function prosesLogin() {
+            const password = document.getElementById('inputPassword').value;
+            const res = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            const data = await res.json();
+            if (res.ok && data.token) {
+                localStorage.setItem('adminToken', data.token);
+                document.getElementById('inputPassword').value = '';
+                cekSesi();
+            } else {
+                alert(data.message || "Password salah!");
             }
         }
 
-        function tampilkanNotifDetail(tgl, hari, listBooking) {
-            const notifBox = document.getElementById('notifBox');
-            if (listBooking.length === 0) {
-                notifBox.style.display = 'block';
-                notifBox.innerHTML = `<div class='notif-title'>📅 Tanggal ${hari} ${namaBulan[bulanAktif]}:</div><p style="font-size:13px; color:#aaa;">Jadwal Kosong. Tempat siap dipesan!</p>`;
+        function prosesLogout() {
+            localStorage.removeItem('adminToken');
+            cekSesi();
+        }
+
+        // Memuat seluruh data gabungan dari server khusus halaman admin
+        async function muatDataAdmin() {
+            // A. Ambil Data List Ruangan
+            const resRooms = await fetch('/api/rooms');
+            const rooms = await resRooms.json();
+            const boxRuangan = document.getElementById('listRuanganDaftar');
+            boxRuangan.innerHTML = '<strong>Ruangan Aktif saat ini:</strong> ';
+            if(rooms.length === 0) boxRuangan.innerHTML += 'Belum ada ruangan.';
+            rooms.forEach((r, idx) => {
+                boxRuangan.innerHTML += `<span style="background:#444; padding:3px 8px; border-radius:3px; margin-right:5px; display:inline-block; margin-top:5px;">${r} <a href="#" onclick="hapusRuangan('${r}')" style="color:#dc3545; text-decoration:none; font-weight:bold; margin-left:5px;">&times;</a></span>`;
+            });
+
+            // B. Ambil Data Booking Jadwal
+            const token = localStorage.getItem('adminToken');
+            const resBookings = await fetch('/api/bookings');
+            const bookings = await resBookings.json();
+            const tabel = document.getElementById('tabelJadwalAdmin');
+            tabel.innerHTML = '';
+
+            if (bookings.length === 0) {
+                tabel.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#888; font-style:italic;">Belum ada pesanan masuk di database cloud.</td></tr>`;
                 return;
             }
 
-            notifBox.style.display = 'block';
-            let htmlContent = `<div class='notif-title'>⚠️ Tanggal ${hari} ${namaBulan[bulanAktif]} Terpakai:</div>`;
-            
-            listBooking.forEach(b => {
-                htmlContent += `
-                    <div class="notif-item">
-                        ⏰ <strong>${b.jamMulai} - ${b.jamSelesai}</strong><br>
-                        🏢 Tempat: ${b.tempat}<br>
-                        ⛪ Acara: <span style="color:#ffc107">${b.acara}</span><br>
-                        👤 Kontak: ${b.nama}
-                    </div>
+            bookings.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${b.tempat}</strong></td>
+                    <td>${b.tanggal}</td>
+                    <td>${b.jamMulai} - ${b.jamSelesai}</td>
+                    <td style="color:#ffc107">${b.acara || '-'}</td>
+                    <td>${b.nama} (${b.nomorHp})</td>
+                    <td>
+                        <button onclick="hapusBooking('${b._id}')" class="btn-danger" style="padding: 5px 10px; font-size:12px;">Hapsus/Batal</button>
+                    </td>
                 `;
+                tabel.appendChild(tr);
             });
-            notifBox.innerHTML = htmlContent;
         }
 
-        function bulanSebelumnya() { bulanAktif--; if(bulanAktif < 0){ bulanAktif=11; tahunAktif--; } renderKalender(); }
-        function bulanBerikutnya() { bulanAktif++; if(bulanAktif > 11){ bulanAktif=0; tahunAktif++; } renderKalender(); }
-
-        // --- SUBMIT FORM ---
-        document.getElementById('formBooking').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const payload = {
-                nama: document.getElementById('nama').value,
-                nomorHp: document.getElementById('nomorHp').value,
-                acara: document.getElementById('acara').value,
-                tempat: document.getElementById('tempat').value,
-                tanggal: document.getElementById('tanggal').value,
-                jamMulai: document.getElementById('jamMulai').value,
-                jamSelesai: document.getElementById('jamSelesai').value
-            };
-
-            const respons = await fetch('/api/bookings', {
+        // FUNSI TAMBAH RUANGAN BARU
+        async function tambahRuangan() {
+            const namaTempat = document.getElementById('namaRuanganBaru').value;
+            if(!namaTempat) return alert("Nama ruangan tidak boleh kosong!");
+            const token = localStorage.getItem('adminToken');
+            
+            const res = await fetch('/api/rooms', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+                body: JSON.stringify({ namaTempat })
             });
-
-            const hasil = await respons.json();
-            alert(hasil.message || "Pemesanan berhasil!");
-            if (respons.ok) { 
-                document.getElementById('formBooking').reset(); 
-                document.getElementById('notifBox').style.display = 'none';
-                muatData(); 
+            const hasil = await res.json();
+            alert(hasil.message);
+            if(res.ok) {
+                document.getElementById('namaRuanganBaru').value = '';
+                muatDataAdmin();
             }
-        });
+        }
 
-        muatData();
-        // Melakukan sinkronisasi data dari database cloud setiap 30 detik secara otomatis
-        setInterval(muatData, 30000);
+        // FUNGSI HAPUS RUANGAN
+        async function hapusRuangan(namaTempat) {
+            if(!confirm(`Hapus ruangan "${namaTempat}"? Seluruh jadwal terikat pada ruangan ini juga ikut terhapus otomatis.`)) return;
+            const token = localStorage.getItem('adminToken');
+            const res = await fetch('/api/rooms', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+                body: JSON.stringify({ namaTempat })
+            });
+            if(res.ok) muatDataAdmin();
+        }
+
+        // FUNGSI UTAMA MENGHAPUS JADWAL PESANAN PESERTA DENGAN VALIDASI ID CLOUD (_id)
+        async function hapusBooking(id) {
+            if (!confirm("Apakah Anda yakin ingin membatalkan/menghapus jadwal pesanan tempat ini?")) return;
+            const token = localStorage.getItem('adminToken');
+
+            try {
+                const res = await fetch(`/api/bookings/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-token': token }
+                });
+                const hasil = await res.json();
+                
+                if (res.ok && hasil.success) {
+                    alert("Puji Tuhan, jadwal pesanan berhasil dihapus secara permanen!");
+                    muatDataAdmin(); // Perbarui tabel secara langsung tanpa refresh halaman
+                } else {
+                    alert("Gagal menghapus: " + (hasil.message || "Sesi login habis. Silakan login ulang."));
+                    prosesLogout();
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Koneksi gagal saat menghubungi server database.");
+            }
+        }
+
+        // Cek status login saat halaman pertama kali dibuka
+        cekSesi();
     </script>
 </body>
 </html>
