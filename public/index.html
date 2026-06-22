@@ -120,53 +120,66 @@
         const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
         async function muatData() {
-            // 1. Muat Dropdown Tempat
-            const resRooms = await fetch('/api/rooms');
-            const rooms = await resRooms.json();
-            const selectTempat = document.getElementById('tempat');
-            selectTempat.innerHTML = '';
-            rooms.forEach(room => {
-                let opt = document.createElement('option');
-                opt.value = room; opt.innerHTML = room;
-                selectTempat.appendChild(opt);
-            });
-
-            // 2. Muat Jadwal & Grouping
-            const resBookings = await fetch('/api/bookings');
-            semuaBooking = await resBookings.json();
-            
-            renderKalender();
-
-            const container = document.getElementById('containerJadwal');
-            container.innerHTML = '';
-
-            if (semuaBooking.length === 0) {
-                container.innerHTML = "<p style='color:#888; font-style:italic;'>Belum ada jadwal terisi.</p>";
-                return;
-            }
-
-            const grupJadwal = {};
-            semuaBooking.forEach(b => {
-                if (!grupJadwal[b.tempat]) grupJadwal[b.tempat] = [];
-                grupJadwal[b.tempat].push(b);
-            });
-
-            for (const tempat in grupJadwal) {
-                const boxGrup = document.createElement('div');
-                boxGrup.className = 'group-tempat';
-                boxGrup.innerHTML = `<div class='nama-header-tempat'>🏢 ${tempat}</div>`;
+            try {
+                // 1. Muat Dropdown Pilihan Ruangan (Dengan Pengingat Pilihan)
+                const resRooms = await fetch('/api/rooms');
+                const rooms = await resRooms.json();
+                const selectTempat = document.getElementById('tempat');
                 
-                grupJadwal[tempat].forEach(b => {
-                    const item = document.createElement('div');
-                    item.style.fontSize = '13px';
-                    item.style.padding = '5px 0';
-                    item.innerHTML = `📅 <strong>${b.tanggal}</strong> (${b.jamMulai} - ${b.jamSelesai})<br>⛪ Acara: ${b.acara} | 👤 ${b.nama}`;
-                    boxGrup.appendChild(item);
+                // INGAT PILIHAN USER SAAT INI SEBELUM DI-REFRESH
+                const pilihanSaatIni = selectTempat.value; 
+
+                selectTempat.innerHTML = '';
+                rooms.forEach(room => {
+                    let opt = document.createElement('option');
+                    opt.value = room; 
+                    opt.innerHTML = room;
+                    selectTempat.appendChild(opt);
                 });
-                container.appendChild(boxGrup);
+
+                // KEMBALIKAN KE PILIHAN USER SEMULA JIKA PILIHAN ITU MASIH ADA
+                if (pilihanSaatIni && rooms.includes(pilihanSaatIni)) {
+                    selectTempat.value = pilihanSaatIni;
+                }
+
+                // 2. Muat Jadwal & Proses Grouping Per Tempat (Sama seperti kode sebelumnya...)
+                const resBookings = await fetch('/api/bookings');
+                semuaBooking = await resBookings.json();
+                
+                renderKalender();
+
+                const container = document.getElementById('containerJadwal');
+                container.innerHTML = '';
+
+                if (semuaBooking.length === 0) {
+                    container.innerHTML = "<p style='color:#888; font-style:italic;'>Belum ada jadwal terisi.</p>";
+                    return;
+                }
+
+                const grupJadwal = {};
+                semuaBooking.forEach(b => {
+                    if (!grupJadwal[b.tempat]) grupJadwal[b.tempat] = [];
+                    grupJadwal[b.tempat].push(b);
+                });
+
+                for (const tempat in grupJadwal) {
+                    const boxGrup = document.createElement('div');
+                    boxGrup.className = 'group-tempat';
+                    boxGrup.innerHTML = `<div class='nama-header-tempat'>🏢 ${tempat}</div>`;
+                    
+                    grupJadwal[tempat].forEach(b => {
+                        const item = document.createElement('div');
+                        item.style.fontSize = '13px';
+                        item.style.padding = '5px 0';
+                        item.innerHTML = `📅 <strong>${b.tanggal}</strong> (${b.jamMulai} - ${b.jamSelesai})<br>⛪ Acara: ${b.acara} | 👤 ${b.nama}`;
+                        boxGrup.appendChild(item);
+                    });
+                    container.appendChild(boxGrup);
+                }
+            } catch (error) {
+                console.error("Gagal memuat data:", error);
             }
         }
-
         // --- LOGIKA KALENDER ---
         function renderKalender() {
             document.getElementById('bulanTahunLabel').innerText = `${namaBulan[bulanAktif]} ${tahunAktif}`;
