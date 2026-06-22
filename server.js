@@ -41,19 +41,39 @@ function proteksiAdmin(req, res, next) {
     next();
 }
 
-// --- AUTO-DELETE JADWAL EXPIRED VIA DATABASE ---
+// --- AUTO-DELETE JADWAL EXPIRED BERDASARKAN WAKTU WIB (ASIA/JAKARTA) ---
 setInterval(async () => {
     try {
-        const sekarang = new Date();
-        const tglSekarang = sekarang.toLocaleDateString('fr-CA'); 
-        const jamSekarang = sekarang.toTimeString().substring(0, 5); 
+        // 1. Ambil waktu saat ini yang disesuaikan persis ke Zona Waktu WIB (Magelang)
+        const waktuWIB = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+        
+        // 2. Ubah menjadi format tanggal lokal (YYYY-MM-DD)
+        const tahun = waktuWIB.getFullYear();
+        const bulan = String(waktuWIB.getMonth() + 1).padStart(2, '0');
+        const hari = String(waktuWIB.getDate()).padStart(2, '0');
+        const tglSekarangWIB = `${tahun}-${bulan}-${hari}`; 
 
-        // Hapus yang tanggalnya sudah lewat
-        await Booking.deleteMany({ tanggal: { $lt: tglSekarang } });
-        // Hapus yang tanggalnya hari ini tapi jam selesainya sudah lewat
-        await Booking.deleteMany({ tanggal: tglSekarang, jamSelesai: { $lte: jamSekarang } });
+        // 3. Ubah menjadi format jam lokal (HH:MM)
+        const jamSekarangWIB = waktuWIB.toTimeString().substring(0, 5); 
+
+        // LOGIKA A: Hapus semua pesanan yang tanggalnya sudah hari-hari kemarin
+        const hapusTanggalLewat = await Booking.deleteMany({ 
+            tanggal: { $lt: tglSekarangWIB } 
+        });
+
+        // LOGIKA B: Hapus pesanan yang tanggalnya HARI INI, tapi JAM SELESAInya sudah lewat
+        const hapusJamLewat = await Booking.deleteMany({ 
+            tanggal: tglSekarangWIB, 
+            jamSelesai: { $lte: jamSekarangWIB } 
+        });
+
+        // Catat ke logs server jika ada data yang dibersihkan (opsional untuk pemantauan admin)
+        if (hapusTanggalLewat.deletedCount > 0 || hapusJamLewat.deletedCount > 0) {
+            console.log(`[AUTO-CLEAN] Berhasil menghapus ${hapusTanggalLewat.deletedCount + hapusJamLewat.deletedCount} jadwal kedaluwarsa.`);
+        }
+
     } catch (err) {
-        console.error("Gagal auto-delete:", err);
+        console.error("Gagal menjalankan sistem auto-delete otomatis:", err);
     }
 }, 60000);
 
