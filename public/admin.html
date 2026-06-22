@@ -2,191 +2,276 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard Panel Pengelola Utama</title>
+    <title>Sistem Booking Gedung Gereja</title>
     <style>
-        body { font-family: sans-serif; max-width: 700px; margin: 30px auto; padding: 20px; background: #f4f6f9; color: #333; }
-        .box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; overflow: hidden; background: #1a1a1a; color: #fff; }
+        
+        .sisi-kiri { width: 45%; padding: 25px; overflow-y: auto; background: rgba(30, 30, 30, 0.95); display: flex; flex-direction: column; gap: 20px; border-right: 3px solid #ffc107; }
+        .sisi-kanan { width: 55%; background-image: url('./background.jpg'); background-repeat: no-repeat; background-position: center center; background-size: cover; position: relative; }
+        
+        h2, h3 { color: #ffc107; margin-bottom: 5px; }
         .form-group { margin-bottom: 12px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; }
-        input, select { width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 5px; }
-        button { padding: 6px 12px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
-        .btn-del { background: #dc3545; }
-        .btn-edit { background: #ffc107; color: black; }
-        li { background: #f9f9f9; padding: 10px; margin-bottom: 8px; border: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; border-radius: 4px;}
-        .hidden { display: none; }
+        label { display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px; }
+        input, select { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 13px; }
+        input:focus, select:focus { border-color: #ffc107; outline: none; }
+        
+        button { width: 100%; padding: 10px; background: #ffc107; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        button:hover { background: #e0a800; }
+        
+        /* --- STYLING KALENDER --- */
+        .kalender-box { background: #222; border: 1px solid #444; padding: 15px; border-radius: 8px; }
+        .kalender-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: bold; color: #ffc107; }
+        .kalender-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; font-size: 12px; font-weight: bold; color: #888; margin-bottom: 5px;}
+        .kalender-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .day { padding: 8px 0; text-align: center; background: #333; border-radius: 4px; cursor: pointer; font-size: 13px; position: relative; }
+        .day:hover { background: #444; }
+        .day.terisi { background: #dc3545; color: white; font-weight: bold; box-shadow: 0 0 5px #dc3545; }
+        .day.terisi::after { content: ''; width: 6px; height: 6px; background: #ffc107; border-radius: 50%; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); }
+        .day.empty { background: transparent; cursor: default; }
+
+        /* --- NOTIFIKASI POPUP DETAIL --- */
+        .notif-detail { background: #2d2d2d; border-left: 5px solid #ffc107; padding: 12px; border-radius: 4px; display: none; margin-top: 5px; }
+        .notif-title { font-weight: bold; color: #ffc107; margin-bottom: 6px; font-size: 14px;}
+        .notif-item { font-size: 13px; border-bottom: 1px solid #444; padding: 6px 0; }
+        .notif-item:last-child { border-bottom: none; }
+
+        /* Grouping List */
+        .group-tempat { background: #252525; border: 1px solid #444; border-radius: 6px; padding: 12px; margin-top: 5px;}
+        .nama-header-tempat { background: #ffc107; color: #000; padding: 4px 8px; font-weight: bold; border-radius: 4px; margin-bottom: 8px; font-size: 14px; }
+        
+        .link-admin { text-align: right; font-size: 12px; }
+        .link-admin a { color: #ffc107; text-decoration: none; }
     </style>
 </head>
 <body>
 
-    <a href="/">&larr; Beranda Utama</a>
+    <div class="sisi-kiri">
+        <div class="link-admin"><a href="/admin.html">Dashboard Admin &rarr;</a></div>
+        <h2>Pemesanan Tempat</h2>
+        
+        <form id="formBooking">
+            <div class="form-group">
+                <label>Nama Pemesan:</label>
+                <input type="text" id="nama" required>
+            </div>
+            <div class="form-group">
+                <label>Nomor HP / WhatsApp (Aktif):</label>
+                <input type="tel" id="nomorHp" placeholder="Contoh: 0812xxxxxx" required>
+            </div>
+            <div class="form-group">
+                <label>Acara / Kegunaan Gedung:</label>
+                <input type="text" id="acara" placeholder="Contoh: Latihan Koor / Rapat Dewan Paroki" required>
+            </div>
+            <div class="form-group">
+                <label>Pilih Ruangan/Gedung:</label>
+                <select id="tempat" required></select>
+            </div>
+            <div class="form-group">
+                <label>Tanggal:</label>
+                <input type="date" id="tanggal" required>
+            </div>
+            <div class="form-group">
+                <label>Jam Mulai s/d Selesai:</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="time" id="jamMulai" required>
+                    <input type="time" id="jamSelesai" required>
+                </div>
+            </div>
+            <button type="submit">Ajukan Pemesanan Tempat</button>
+        </form>
 
-    <div id="loginBox" class="box">
-        <h2>Verifikasi Khusus Admin</h2>
-        <div class="form-group">
-            <input type="password" id="inputPassword" placeholder="Masukkan Password Admin" required>
+        <hr style="border-color: #333;">
+
+        <h3>Kalender Cek Jadwal</h3>
+        <div class="kalender-box">
+            <div class="kalender-header">
+                <button onclick="bulanSebelumnya()" style="width:auto; padding:5px 10px; font-size:12px;">&larr;</button>
+                <span id="bulanTahunLabel"></span>
+                <button onclick="bulanBerikutnya()" style="width:auto; padding:5px 10px; font-size:12px;">&rarr;</button>
+            </div>
+            <div class="kalender-days">
+                <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
+            </div>
+            <div id="kalenderGrid" class="kalender-grid"></div>
         </div>
-        <button onclick="login()">Masuk Sistem</button>
+
+        <div id="notifBox" class="notif-detail"></div>
+
+        <h3>Daftar Jadwal (Grouping)</h3>
+        <div id="containerJadwal"></div>
     </div>
 
-    <div id="dashboardBox" class="hidden">
-        <div class="box" style="background: #e9ecef; display: flex; justify-content: space-between; align-items: center;">
-            <h3>Selamat Datang, Admin</h3>
-            <button onclick="logout()" style="background: #6c757d;">Logout</button>
-        </div>
-
-        <div class="box">
-            <h3>1. Manajemen Daftar Ruangan/Gedung</h3>
-            <form id="formTempat" style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="namaTempat" placeholder="Nama Tempat Baru" required>
-                <button type="submit">Tambah</button>
-            </form>
-            <ul id="listTempat"></ul>
-        </div>
-
-        <div class="box">
-            <h3>2. Modifikasi / Edit Jadwal Booking Pemesan</h3>
-            <ul id="listJadwalAdmin"></ul>
-        </div>
-
-        <div class="box">
-            <h3>3. Pengaturan Keamanan</h3>
-            <input type="password" id="passBaru" placeholder="Password Baru">
-            <button onclick="ubahPassword()">Perbarui Password</button>
-        </div>
-    </div>
+    <div class="sisi-kanan"></div>
 
     <script>
-        function getToken() { return localStorage.getItem('adminToken') || ''; }
+        let semuaBooking = [];
+        let tanggalSekarang = new Date();
+        let bulanAktif = tanggalSekarang.getMonth();
+        let tahunAktif = tanggalSekarang.getFullYear();
 
-        function cekSesi() {
-            if (!getToken()) {
-                document.getElementById('loginBox').classList.remove('hidden');
-                document.getElementById('dashboardBox').classList.add('hidden');
-            } else {
-                document.getElementById('loginBox').classList.add('hidden');
-                document.getElementById('dashboardBox').classList.remove('hidden');
-                muatTempat();
-                muatJadwalAdmin();
+        const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+        async function muatData() {
+            try {
+                // 1. Muat Dropdown Pilihan Ruangan (Dengan Pengingat Pilihan agar tidak melompat sendiri)
+                const resRooms = await fetch('/api/rooms');
+                const rooms = await resRooms.json();
+                const selectTempat = document.getElementById('tempat');
+                
+                // Ambil nilai pilihan user saat ini sebelum daftar dikosongkan
+                const pilihanSaatIni = selectTempat.value; 
+
+                selectTempat.innerHTML = '';
+                rooms.forEach(room => {
+                    let opt = document.createElement('option');
+                    opt.value = room; 
+                    opt.innerHTML = room;
+                    selectTempat.appendChild(opt);
+                });
+
+                // Kembalikan pilihan user semula jika item tersebut masih ada di dalam database
+                if (pilihanSaatIni && rooms.includes(pilihanSaatIni)) {
+                    selectTempat.value = pilihanSaatIni;
+                }
+
+                // 2. Muat Jadwal & Proses Grouping Per Tempat
+                const resBookings = await fetch('/api/bookings');
+                semuaBooking = await resBookings.json();
+                
+                renderKalender();
+
+                const container = document.getElementById('containerJadwal');
+                container.innerHTML = '';
+
+                if (semuaBooking.length === 0) {
+                    container.innerHTML = "<p style='color:#888; font-style:italic;'>Belum ada jadwal terisi.</p>";
+                    return;
+                }
+
+                const grupJadwal = {};
+                semuaBooking.forEach(b => {
+                    if (!grupJadwal[b.tempat]) grupJadwal[b.tempat] = [];
+                    grupJadwal[b.tempat].push(b);
+                });
+
+                for (const tempat in grupJadwal) {
+                    const boxGrup = document.createElement('div');
+                    boxGrup.className = 'group-tempat';
+                    boxGrup.innerHTML = `<div class='nama-header-tempat'>🏢 ${tempat}</div>`;
+                    
+                    grupJadwal[tempat].forEach(b => {
+                        const item = document.createElement('div');
+                        item.style.fontSize = '13px';
+                        item.style.padding = '5px 0';
+                        item.innerHTML = `📅 <strong>${b.tanggal}</strong> (${b.jamMulai} - ${b.jamSelesai})<br>⛪ Acara: ${b.acara} | 👤 ${b.nama}`;
+                        boxGrup.appendChild(item);
+                    });
+                    container.appendChild(boxGrup);
+                }
+            } catch (error) {
+                console.error("Gagal memuat data:", error);
             }
         }
 
-        async function login() {
-            const password = document.getElementById('inputPassword').value;
-            const res = await fetch('/api/admin/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password })
-            });
-            const data = await res.json();
-            if(res.ok) { localStorage.setItem('adminToken', data.token); cekSesi(); } 
-            else { alert(data.message); }
+        // --- LOGIKA KALENDER ---
+        function renderKalender() {
+            document.getElementById('bulanTahunLabel').innerText = `${namaBulan[bulanAktif]} ${tahunAktif}`;
+            const grid = document.getElementById('kalenderGrid');
+            grid.innerHTML = '';
+
+            const hariPertama = new Date(tahunAktif, bulanAktif, 1).getDay();
+            const jumlahHari = new Date(tahunAktif, bulanAktif + 1, 0).getDate();
+
+            // Slot kosong awal bulan
+            for (let i = 0; i < hariPertama; i++) {
+                let div = document.createElement('div');
+                div.className = 'day empty';
+                grid.appendChild(div);
+            }
+
+            // Isi hari/tanggal
+            for (let hari = 1; hari <= jumlahHari; hari++) {
+                let div = document.createElement('div');
+                div.className = 'day';
+                div.innerText = hari;
+
+                // Format ke string YYYY-MM-DD
+                let mm = String(bulanAktif + 1).padStart(2, '0');
+                let dd = String(hari).padStart(2, '0');
+                let stringTanggal = `${tahunAktif}-${mm}-${dd}`;
+
+                // Cek apakah ada booking di tanggal ini
+                let adaBooking = semuaBooking.filter(b => b.tanggal === stringTanggal);
+                if (adaBooking.length > 0) {
+                    div.classList.add('terisi');
+                }
+
+                // Efek Klik Tanggal Kalender
+                div.onclick = () => tampilkanNotifDetail(stringTanggal, hari, adaBooking);
+
+                grid.appendChild(div);
+            }
         }
 
-        async function muatTempat() {
-            const res = await fetch('/api/rooms');
-            const data = await res.json();
-            const list = document.getElementById('listTempat');
-            list.innerHTML = '';
-            data.forEach(t => {
-                const li = document.createElement('li');
-                li.innerHTML = `<span>${t}</span> <div>
-                    <button class="btn-edit" onclick="editTempat('${t}')">Edit</button>
-                    <button class="btn-del" onclick="hapusTempat('${t}')">Hapus</button>
-                </div>`;
-                list.appendChild(li);
-            });
-        }
+        function tampilkanNotifDetail(tgl, hari, listBooking) {
+            const notifBox = document.getElementById('notifBox');
+            if (listBooking.length === 0) {
+                notifBox.style.display = 'block';
+                notifBox.innerHTML = `<div class='notif-title'>📅 Tanggal ${hari} ${namaBulan[bulanAktif]}:</div><p style="font-size:13px; color:#aaa;">Jadwal Kosong. Tempat siap dipesan!</p>`;
+                return;
+            }
 
-        async function muatJadwalAdmin() {
-            const res = await fetch('/api/bookings');
-            const data = await res.json();
-            const list = document.getElementById('listJadwalAdmin');
-            list.innerHTML = '';
+            notifBox.style.display = 'block';
+            let htmlContent = `<div class='notif-title'>⚠️ Tanggal ${hari} ${namaBulan[bulanAktif]} Terpakai:</div>`;
             
-            data.forEach(b => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <div>
-                        <strong>${b.tempat}</strong> - ${b.tanggal} (${b.jamMulai}-${b.jamSelesai})<br>
-                        Pemesan: ${b.nama} (${b.nomorHp})
-                    </div>
-                    <div>
-                        <button class="btn-edit" onclick="editJadwal('${b.id}', '${b.nama}', '${b.nomorHp}', '${b.tempat}', '${b.tanggal}', '${b.jamMulai}', '${b.jamSelesai}')">Edit Jadwal</button>
-                        <button class="btn-del" onclick="hapusJadwal('${b.id}')">X</button>
+            listBooking.forEach(b => {
+                htmlContent += `
+                    <div class="notif-item">
+                        ⏰ <strong>${b.jamMulai} - ${b.jamSelesai}</strong><br>
+                        🏢 Tempat: ${b.tempat}<br>
+                        ⛪ Acara: <span style="color:#ffc107">${b.acara}</span><br>
+                        👤 Kontak: ${b.nama}
                     </div>
                 `;
-                list.appendChild(li);
             });
+            notifBox.innerHTML = htmlContent;
         }
 
-        async function editJadwal(id, nama, nomorHp, tempat, tanggal, jamMulai, jamSelesai) {
-            const nNama = prompt("Edit Nama Pemesan:", nama) || nama;
-            const nHp = prompt("Edit Nomor HP:", nomorHp) || nomorHp;
-            const nTanggal = prompt("Edit Tanggal (YYYY-MM-DD):", tanggal) || tanggal;
-            const nMulai = prompt("Edit Jam Mulai (HH:MM):", jamMulai) || jamMulai;
-            const nSelesai = prompt("Edit Jam Selesai (HH:MM):", jamSelesai) || jamSelesai;
+        function bulanSebelumnya() { bulanAktif--; if(bulanAktif < 0){ bulanAktif=11; tahunAktif--; } renderKalender(); }
+        function bulanBerikutnya() { bulanAktif++; if(bulanAktif > 11){ bulanAktif=0; tahunAktif++; } renderKalender(); }
 
-            const res = await fetch(`/api/bookings/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'x-admin-token': getToken() },
-                body: JSON.stringify({ nama: nNama, nomorHp: nHp, tempat, tanggal: nTanggal, jamMulai: nMulai, jamSelesai: nSelesai })
-            });
-            alert(await res.json().then(d => d.message));
-            muatJadwalAdmin();
-        }
-
-        async function hapusJadwal(id) {
-            if(!confirm("Hapus jadwal ini secara manual?")) return;
-            await fetch(`/api/bookings/${id}`, { method: 'DELETE', headers: { 'x-admin-token': getToken() } });
-            muatJadwalAdmin();
-        }
-
-        // Tambah tempat baru
-        document.getElementById('formTempat').addEventListener('submit', async (e) => {
+        // --- SUBMIT FORM ---
+        document.getElementById('formBooking').addEventListener('submit', async (e) => {
             e.preventDefault();
-            await fetch('/api/rooms', {
+            const payload = {
+                nama: document.getElementById('nama').value,
+                nomorHp: document.getElementById('nomorHp').value,
+                acara: document.getElementById('acara').value,
+                tempat: document.getElementById('tempat').value,
+                tanggal: document.getElementById('tanggal').value,
+                jamMulai: document.getElementById('jamMulai').value,
+                jamSelesai: document.getElementById('jamSelesai').value
+            };
+
+            const respons = await fetch('/api/bookings', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-admin-token': getToken() },
-                body: JSON.stringify({ namaTempat: document.getElementById('namaTempat').value })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
-            document.getElementById('namaTempat').value = '';
-            muatTempat();
+
+            const hasil = await respons.json();
+            alert(hasil.message || "Pemesanan berhasil!");
+            if (respons.ok) { 
+                document.getElementById('formBooking').reset(); 
+                document.getElementById('notifBox').style.display = 'none';
+                muatData(); 
+            }
         });
 
-        async function editTempat(namaLama) {
-            const namaBaru = prompt("Ubah Nama Tempat:", namaLama);
-            if(!namaBaru) return;
-            await fetch('/api/rooms', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'x-admin-token': getToken() },
-                body: JSON.stringify({ namaLama, namaBaru })
-            });
-            muatTempat(); muatJadwalAdmin();
-        }
-
-        async function hapusTempat(namaTempat) {
-            if(!confirm("Hapus tempat ini beserta seluruh jadwal di dalamnya?")) return;
-            await fetch('/api/rooms', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json', 'x-admin-token': getToken() },
-                body: JSON.stringify({ namaTempat })
-            });
-            muatTempat(); muatJadwalAdmin();
-        }
-
-        async function ubahPassword() {
-            const passwordBaru = document.getElementById('passBaru').value;
-            const res = await fetch('/api/admin/change-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-admin-token': getToken() },
-                body: JSON.stringify({ passwordBaru })
-            });
-            alert(await res.json().then(d => d.message));
-            if(res.ok) logout();
-        }
-
-        function logout() { localStorage.removeItem('adminToken'); window.location.reload(); }
-        cekSesi();
+        muatData();
+        // Melakukan sinkronisasi data dari database cloud setiap 30 detik secara otomatis
+        setInterval(muatData, 30000);
     </script>
 </body>
 </html>
